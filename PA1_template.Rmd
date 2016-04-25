@@ -8,18 +8,60 @@ output:
 
 ## Loading and preprocessing the data
 
-
+```{r}
+mydata <- read.csv("activity.csv")
+sum2 <- aggregate(mydata2$steps, by=list(mydata2$date), FUN=sum, na.rm = TRUE)
+```
 
 ## What is mean total number of steps taken per day?
 
-
-
+##sum of steps, histogram, mean and median 
+```{r}
+sum2 <- aggregate(mydata$steps, by=list(mydata$date), FUN=sum, na.rm = TRUE)
+hist(sum2$x)
+mean(sum2$x)
+median(sum2$x)
+```
 ## What is the average daily activity pattern?
-
-
+##avg steps per interval, max
+```{r}
+avg1 <- aggregate(mydata$steps, by=list(mydata$interval), FUN=mean, na.rm = TRUE)
+ggplot(avg1, aes(x = Group.1 , y = x)) + geom_line() + theme_bw() + xlab("Interval") + ylab("Average Steps per Interval")
+which.max(avg1[,2])
+```
 
 ## Imputing missing values
+##number of missing values, mydata2 gets rid of them (replaces with 0)
+```{r}
+sum(is.na(mydata$steps))
+mydata[is.na(mydata)] <- 0
+sum(is.na(mydata$steps))
+mydata2 <- mydata[complete.cases(mydata),]
+library(dplyr)
+StepsPerDay <- mydata2 %>% group_by(date) %>% summarise(totalsteps=sum(steps))
+ggplot(StepsPerDay, aes(x = totalsteps)) +
++     geom_histogram(data = StepsPerDay, binwidth = 100) +
++     xlab("Steps Per Day") + labs(title = "Histogram")
+mean(StepsPerDay$totalsteps)
+median(StepsPerDay$totalsteps)
 
+
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+DayofWeek <- function(x=vector()){
+    dayNames <- strptime(x, format="%Y-%m-%d")
+    dayNumbers <- as.numeric(format(dayNames, "%u"))
+    weekendWeekday<- factor(dayNumbers <= 5, levels =c(TRUE, FALSE) , labels = c("Weekday", "Weekend"))
+} 
+NumStepsPerDay <- mydata2 %>% mutate(day1 = DayofWeek(date)) %>%
+    group_by(interval, day1) %>% summarise(meansteps=mean(steps))
+
+stepsplot <- ggplot(NumStepsPerDay, aes(x = interval, y = meansteps)) + geom_line() 
+
+stepsplot +  facet_grid(day1 ~ .) + theme_bw() + ylab("Steps") + xlab("Interval") +
+    labs(title = "Weekdays / Weekends")
+```
